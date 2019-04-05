@@ -1,6 +1,7 @@
 import React, { Component } from "react";
-import { PageHeader, ListGroup, ListGroupItem } from "react-bootstrap";
+import { PageHeader, ListGroup, ListGroupItem, Col, Row } from "react-bootstrap";
 import { LinkContainer } from "react-router-bootstrap";
+import LoaderButton from "../components/LoaderButton";
 import "./Home.css";
 import { API } from "aws-amplify";
 
@@ -10,40 +11,100 @@ export default class Home extends Component {
 
     this.state = {
       isLoading: true,
+      isDeleting: null,
+      isEditing: null,
       notes: []
     };
   }
+
   async componentDidMount() {
-  if (!this.props.isAuthenticated) {
+
+    try {
+      const notes = await this.notes();
+
+      this.setState({
+        notes
+      });
+    } catch (e) {
+      alert(e);
+      }
+
+    this.setState({ isLoading: false });
+  }
+  async componentWillUpdate() {
+    try {
+      const notes =  await this.notes();
+
+      this.setState({
+        notes
+      });
+    } catch (e) {
+      alert(e);
+      }
+      this.setState({ isLoading: false });
+
+  }
+
+  deleteNote(id) {
+  return API.del("notes", `/notes/${id}`);
+  }
+
+  handleDelete = (i) => {
+
+  const confirmed = window.confirm(
+    "Are you sure you want to delete this note?"
+  );
+
+  if (!confirmed) {
     return;
   }
 
+  this.setState({ isDeleting: true });
+
   try {
-    const notes = await this.notes();
-    this.setState({ notes });
+    this.deleteNote(i);
   } catch (e) {
     alert(e);
+    this.setState({ isDeleting: false });
+    }
+
+    this.setState({ isLoading: false,
+    isDeleting: false });
   }
 
-  this.setState({ isLoading: false });
-}
-
-notes() {
-  return API.get("notes", "/notes");
-}
-
+  notes() {
+    return API.get("notes", "/notes");
+  }
 
   renderNotesList(notes) {
-  return [{}].concat(notes).map(
-    (note, i) =>
-      i !== 0
-        ? <LinkContainer
-            key={note.noteId}
-            to={`/notes/${note.noteId}`}>
-            <ListGroupItem header={note.content.trim().split("\n")[0]}>
-              {"Created: " + new Date(note.createdAt).toLocaleString()}
+     return [{}].concat(notes).map(
+       (note, i) =>
+        i !== 0
+        ?
+          <ListGroupItem header={note.content.trim().split("\n")[0]}>
+              <Row>
+                <Col sm={10}>
+                 {"Created: " + new Date(note.createdAt).toLocaleString()}
+                </Col>
+                <Col sm={1}>
+                      Edit
+                </Col>
+                <Col sm={1}>
+                    <LoaderButton
+                    key={note.noteId}
+                    block
+                    bsStyle="danger"
+                    bsSize="large"
+                    isLoading={this.state.isDeleting}
+                    onClick={this.handleDelete.bind(this, note.noteId)}
+                    text="Delete"
+                    loadingText="Deleting…"
+                    className="glyphicon glyphicon-trash"
+                    >Delete</LoaderButton>
+                </Col>
+              </Row>
             </ListGroupItem>
-          </LinkContainer>
+
         : <LinkContainer
             key="new"
             to="/notes/new"
@@ -55,7 +116,7 @@ notes() {
             </ListGroupItem>
           </LinkContainer>
   );
-}
+  }
 
   renderLander() {
     return (
@@ -64,7 +125,7 @@ notes() {
         <p>A simple note taking app</p>
       </div>
     );
-  }
+   }
 
   renderNotes() {
     return (

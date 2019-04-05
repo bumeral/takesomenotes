@@ -16,5 +16,6 @@ export default ({
     {...props}
   >
     {isLoading && <Glyphicon glyph="refresh" className="spinning" />}
+    
     {!isLoading ? text : loadingText}
   </Button>;

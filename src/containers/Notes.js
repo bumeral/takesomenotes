@@ -170,6 +170,7 @@ render() {
             onClick={this.handleDelete}
             text="Delete"
             loadingText="Deleting…"
+            className="spinning"
           />
         </form>}
     </div>
